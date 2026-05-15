@@ -1,0 +1,127 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Text To Word</title></head><body><p>// SPDX-License-Identifier: MIT</p>
+<p>pragma solidity ^0.8.0;</p>
+<p>&nbsp;</p>
+<p>contract HealthcareManagement {</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // ---------------- STRUCTS ----------------</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; struct Patient {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string name;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; uint age;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string gender;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; bool isRegistered;</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; struct Doctor {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string name;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string specialization;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; bool isRegistered;</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; struct MedicalRecord {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string disease;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string treatment;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string medicines;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; uint date;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; address doctorAddress;</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // ---------------- MAPPINGS ----------------</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; mapping(address =&gt; Patient) public patients;</p>
+<p>&nbsp; &nbsp; mapping(address =&gt; Doctor) public doctors;</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // Patient =&gt; Records</p>
+<p>&nbsp; &nbsp; mapping(address =&gt; MedicalRecord[]) private patientRecords;</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // Patient =&gt; Doctor =&gt; Permission</p>
+<p>&nbsp; &nbsp; mapping(address =&gt; mapping(address =&gt; bool)) public permission;</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // ---------------- EVENTS ----------------</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; event PatientRegistered(address patientAddress, string name);</p>
+<p>&nbsp; &nbsp; event DoctorRegistered(address doctorAddress, string name);</p>
+<p>&nbsp; &nbsp; event PermissionGranted(address patientAddress, address doctorAddress);</p>
+<p>&nbsp; &nbsp; event RecordAdded(address patientAddress, address doctorAddress, string disease);</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // ---------------- MODIFIERS ----------------</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; modifier onlyRegisteredPatient() {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; require(patients[msg.sender].isRegistered, "Patient not registered");</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; _;</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; modifier onlyRegisteredDoctor() {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; require(doctors[msg.sender].isRegistered, "Doctor not registered");</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; _;</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // ---------------- FUNCTIONS ----------------</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // Register Patient</p>
+<p>&nbsp; &nbsp; function registerPatient(string memory _name, uint _age, string memory _gender) public {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; require(!patients[msg.sender].isRegistered, "Already registered as patient");</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; patients[msg.sender] = Patient(_name, _age, _gender, true);</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; emit PatientRegistered(msg.sender, _name);</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // Register Doctor</p>
+<p>&nbsp; &nbsp; function registerDoctor(string memory _name, string memory _specialization) public {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; require(!doctors[msg.sender].isRegistered, "Already registered as doctor");</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; doctors[msg.sender] = Doctor(_name, _specialization, true);</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; emit DoctorRegistered(msg.sender, _name);</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // Patient gives permission to Doctor</p>
+<p>&nbsp; &nbsp; function grantPermission(address _doctorAddress) public onlyRegisteredPatient {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; require(doctors[_doctorAddress].isRegistered, "Doctor not registered");</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; permission[msg.sender][_doctorAddress] = true;</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; emit PermissionGranted(msg.sender, _doctorAddress);</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // Doctor adds medical record for Patient</p>
+<p>&nbsp; &nbsp; function addMedicalRecord(</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; address _patientAddress,</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string memory _disease,</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string memory _treatment,</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; string memory _medicines</p>
+<p>&nbsp; &nbsp; ) public onlyRegisteredDoctor {</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; require(patients[_patientAddress].isRegistered, "Patient not registered");</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; require(permission[_patientAddress][msg.sender] == true, "Permission not granted");</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; MedicalRecord memory newRecord = MedicalRecord(</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; _disease,</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; _treatment,</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; _medicines,</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; block.timestamp,</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; msg.sender</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; );</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; patientRecords[_patientAddress].push(newRecord);</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; emit RecordAdded(_patientAddress, msg.sender, _disease);</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // Patient views their records</p>
+<p>&nbsp; &nbsp; function viewMyRecords() public view onlyRegisteredPatient returns (MedicalRecord[] memory) {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; return patientRecords[msg.sender];</p>
+<p>&nbsp; &nbsp; }</p>
+<p>&nbsp;</p>
+<p>&nbsp; &nbsp; // Doctor views patient records (only if permission granted)</p>
+<p>&nbsp; &nbsp; function viewPatientRecords(address _patientAddress)</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; public</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; view</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; onlyRegisteredDoctor</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; returns (MedicalRecord[] memory)</p>
+<p>&nbsp; &nbsp; {</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; require(permission[_patientAddress][msg.sender] == true, "Permission not granted");</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; return patientRecords[_patientAddress];</p>
+<p>&nbsp; &nbsp; }</p>
+<p>}</p></body></html>
